@@ -10,23 +10,50 @@ import SwiftData
 
 @main
 struct SDG_WalletApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+    private let container: ModelContainer
 
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+    init() {
+        self.container = Self.makeModelContainer()
+        Task.detached(priority: .background) {
+            await ActivityIntelligenceProvider.shared.warmup()
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(container)
+    }
+    
+    private static func makeModelContainer() -> ModelContainer {
+        let schema = Schema([
+            Contribution.self
+        ])
+        
+        do {
+            return try ModelContainer(for: schema)
+        } catch {
+            resetLocalStore()
+            return try! ModelContainer(for: schema)
+        }
+    }
+    
+    private static func resetLocalStore() {
+        guard let supportURL = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else { return }
+        
+        let storeFiles = [
+            "default.store",
+            "default.store-shm",
+            "default.store-wal"
+        ]
+        
+        for fileName in storeFiles {
+            let url = supportURL.appendingPathComponent(fileName)
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 }
