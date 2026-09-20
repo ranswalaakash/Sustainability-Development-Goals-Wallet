@@ -9,12 +9,6 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Query private var contributions: [Contribution]
-    
-    private var pendingCount: Int {
-        contributions.filter { $0.status == .pending }.count
-    }
-    
     var body: some View {
         TabView {
             NavigationStack {
@@ -40,14 +34,6 @@ struct ContentView: View {
             .tabItem {
                 Label("Impact", systemImage: "leaf.fill")
             }
-            
-            NavigationStack {
-                CoordinatorPortalView()
-            }
-            .tabItem {
-                Label("Coordinator", systemImage: "person.badge.shield.checkmark.fill")
-            }
-            .badge(pendingCount > 0 ? "\(pendingCount)" : nil)
         }
         .tint(.green)
     }

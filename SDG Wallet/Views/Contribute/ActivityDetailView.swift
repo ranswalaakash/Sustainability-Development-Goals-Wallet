@@ -13,6 +13,7 @@ struct ActivityDetailView: View {
     @Bindable var contribution: Contribution
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteConfirmation = false
+    @State private var showResubmitSheet = false
     
     var body: some View {
         ScrollView {
@@ -90,21 +91,51 @@ struct ActivityDetailView: View {
                 
                 // MARK: - 5. Coordinator Notes (if verified/reviewed)
                 if let notes = contribution.reviewerNotes, !notes.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Image(systemName: "person.badge.shield.checkmark.fill")
+                            Image(systemName: contribution.status == .approved ? "person.badge.shield.checkmark.fill" : "exclamationmark.triangle.fill")
                                 .foregroundColor(contribution.status == .approved ? .green : (contribution.status == .changesRequested ? .orange : .red))
-                            Text(contribution.status == .approved ? "Coordinator Verification Note" : (contribution.status == .changesRequested ? "Requested Correction" : "Rejection Reason"))
+                            Text(contribution.status == .approved ? "Coordinator Verification Note" : (contribution.status == .changesRequested ? "Coordinator Requested Changes" : "Rejection Reason"))
                                 .font(.headline)
                         }
+                        
                         Text(notes)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.primary)
+                            .padding(.vertical, 2)
+                        
+                        if let reviewer = contribution.verifiedBy {
+                            Text("Reviewed by: \(reviewer)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(contribution.status.color.opacity(0.1))
+                    .background(contribution.status.color.opacity(0.12))
                     .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(contribution.status.color.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                
+                // MARK: - Resubmit Button (When Changes are Requested)
+                if contribution.status == .changesRequested {
+                    Button {
+                        showResubmitSheet = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                            Text("Edit & Resubmit to Coordinator")
+                                .fontWeight(.bold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.orange)
+                        .foregroundColor(.white)
+                        .cornerRadius(14)
+                    }
                 }
                 
                 // MARK: - Delete Contribution Button
@@ -122,10 +153,13 @@ struct ActivityDetailView: View {
                     .foregroundColor(.red)
                     .cornerRadius(14)
                 }
-                .padding(.top, 10)
+                .padding(.top, 4)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
+        }
+        .sheet(isPresented: $showResubmitSheet) {
+            ResubmitContributionSheet(contribution: contribution)
         }
         .refreshable {
             if let result = try? await APIService.shared.fetchContributionStatus(id: contribution.id) {
@@ -133,6 +167,9 @@ struct ActivityDetailView: View {
                     contribution.status = result.status
                     if let note = result.note {
                         contribution.reviewerNotes = note
+                    }
+                    if let reviewer = result.reviewer {
+                        contribution.verifiedBy = reviewer
                     }
                 }
             }
@@ -469,5 +506,130 @@ struct TimelineStepView: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Resubmit Updates Sheet
+struct ResubmitContributionSheet: View {
+    @Bindable var contribution: Contribution
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var updatedTitle: String = ""
+    @State private var updatedDescription: String = ""
+    @State private var studentReplyNote: String = ""
+    @State private var isSubmitting: Bool = false
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    
+                    // Coordinator Feedback Notice
+                    if let note = contribution.reviewerNotes {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                Text("Coordinator Feedback:")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundColor(.orange)
+                            }
+                            Text(note)
+                                .font(.subheadline)
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.orange.opacity(0.12))
+                        .cornerRadius(12)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Title")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
+                        TextField("Title", text: $updatedTitle)
+                            .textFieldStyle(.plain)
+                            .padding(12)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground))
+                            .cornerRadius(10)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Updated Description / Additional Context")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
+                        TextField("Provide more clarity, updated figures or details...", text: $updatedDescription, axis: .vertical)
+                            .lineLimit(4...8)
+                            .textFieldStyle(.plain)
+                            .padding(12)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground))
+                            .cornerRadius(10)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Response Note to Coordinator (Optional)")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
+                        TextField("e.g. Updated photos and clarified volunteer hours as requested.", text: $studentReplyNote)
+                            .textFieldStyle(.plain)
+                            .padding(12)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground))
+                            .cornerRadius(10)
+                    }
+                    
+                    Button {
+                        resubmit()
+                    } label: {
+                        HStack {
+                            if isSubmitting {
+                                ProgressView().tint(.white)
+                            } else {
+                                Image(systemName: "arrow.up.circle.fill")
+                                Text("Resubmit for Verification")
+                                    .fontWeight(.bold)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(updatedTitle.isEmpty ? Color.gray : Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(14)
+                    }
+                    .disabled(updatedTitle.isEmpty || isSubmitting)
+                    .padding(.top, 10)
+                }
+                .padding(16)
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle("Resubmit Entry")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .onAppear {
+                self.updatedTitle = contribution.title
+                self.updatedDescription = contribution.activityDescription
+            }
+        }
+    }
+    
+    private func resubmit() {
+        isSubmitting = true
+        contribution.title = updatedTitle
+        contribution.activityDescription = updatedDescription
+        contribution.status = .pending
+        contribution.reviewerNotes = nil
+        contribution.date = Date()
+        
+        Task {
+            _ = try? await APIService.shared.submitContribution(contribution)
+            await MainActor.run {
+                isSubmitting = false
+                dismiss()
+            }
+        }
     }
 }

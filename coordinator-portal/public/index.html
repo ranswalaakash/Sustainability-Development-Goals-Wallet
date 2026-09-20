@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDG Wallet | Campus Sustainability Coordinator Portal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-lg shadow-md shadow-emerald-200">
+          <i class="fa-solid fa-leaf"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Campus Portal</span>
+            <span class="text-xs text-slate-400">• Institutional Node</span>
+          </div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">SDG Wallet Coordinator Verification</h1>
+        </div>
+      </div>
+
+      <!-- Right Profile & Live Status -->
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-semibold border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Live API Connected</span>
+        </div>
+        <div class="flex items-center space-x-3 border-l border-slate-200 pl-4">
+          <div class="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-sm">
+            SC
+          </div>
+          <div class="hidden sm:block text-left">
+            <p class="text-sm font-semibold text-slate-900 leading-none">Prof. Sarah Chen</p>
+            <p class="text-xs text-slate-500 mt-0.5">Sustainability Director</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+    
+    <!-- DASHBOARD KPI STATS -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      
+      <!-- Pending Reviews (Highlight) -->
+      <div class="bg-amber-500 text-white rounded-2xl p-4 shadow-lg shadow-amber-200 flex flex-col justify-between relative overflow-hidden">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-medium text-amber-100 uppercase tracking-wider">Awaiting Audit</span>
+          <i class="fa-solid fa-clock text-amber-200 text-lg"></i>
+        </div>
+        <div class="mt-3">
+          <h3 id="stat-pending" class="text-3xl font-extrabold">0</h3>
+          <p class="text-xs text-amber-100 mt-0.5">Pending Student Logs</p>
+        </div>
+      </div>
+
+      <!-- Verified Initiatives -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Verified</span>
+          <i class="fa-solid fa-certificate text-emerald-500 text-lg"></i>
+        </div>
+        <div class="mt-3">
+          <h3 id="stat-verified" class="text-3xl font-bold text-slate-900">0</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Approved Actions</p>
+        </div>
+      </div>
+
+      <!-- Trees Verified -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Trees Planted</span>
+          <i class="fa-solid fa-tree text-green-600 text-lg"></i>
+        </div>
+        <div class="mt-3">
+          <h3 id="stat-trees" class="text-3xl font-bold text-green-600">0</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Total Saplings</p>
+        </div>
+      </div>
+
+      <!-- Waste Recycled -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Waste Recycled</span>
+          <i class="fa-solid fa-recycle text-blue-500 text-lg"></i>
+        </div>
+        <div class="mt-3">
+          <h3 id="stat-waste" class="text-3xl font-bold text-blue-600">0 <span class="text-sm font-normal text-slate-500">kg</span></h3>
+          <p class="text-xs text-slate-500 mt-0.5">Material Diverted</p>
+        </div>
+      </div>
+
+      <!-- Clean Energy -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Energy Saved</span>
+          <i class="fa-solid fa-bolt text-amber-500 text-lg"></i>
+        </div>
+        <div class="mt-3">
+          <h3 id="stat-energy" class="text-3xl font-bold text-amber-600">0 <span class="text-sm font-normal text-slate-500">kWh</span></h3>
+          <p class="text-xs text-slate-500 mt-0.5">Reduced Usage</p>
+        </div>
+      </div>
+
+      <!-- Volunteer Hours -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-start">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Service Hours</span>
+          <i class="fa-solid fa-stopwatch text-purple-500 text-lg"></i>
+        </div>
+        <div class="mt-3">
+          <h3 id="stat-hours" class="text-3xl font-bold text-purple-600">0 <span class="text-sm font-normal text-slate-500">hrs</span></h3>
+          <p class="text-xs text-slate-500 mt-0.5">Community Time</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FILTER TABS & SEARCH BAR -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Status Tabs -->
+      <div class="flex flex-wrap gap-2 w-full md:w-auto" id="filter-tabs">
+        <button onclick="setFilter('PENDING')" class="filter-btn active-tab px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-amber-500 text-white shadow-sm flex items-center space-x-2" data-filter="PENDING">
+          <span>Awaiting Verification</span>
+          <span id="tab-badge-pending" class="bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+        </button>
+        <button onclick="setFilter('VERIFIED')" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center space-x-2" data-filter="VERIFIED">
+          <span>Verified & Approved</span>
+          <span id="tab-badge-verified" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+        </button>
+        <button onclick="setFilter('CHANGES_REQUESTED')" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center space-x-2" data-filter="CHANGES_REQUESTED">
+          <span>Changes Requested</span>
+          <span id="tab-badge-changes" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+        </button>
+        <button onclick="setFilter('REJECTED')" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center space-x-2" data-filter="REJECTED">
+          <span>Rejected</span>
+        </button>
+        <button onclick="setFilter('ALL')" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all flex items-center space-x-2" data-filter="ALL">
+          <span>All Records</span>
+        </button>
+      </div>
+
+      <!-- Search & Refresh -->
+      <div class="flex items-center space-x-3 w-full md:w-auto">
+        <div class="relative flex-1 md:w-64">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+          <input type="text" id="search-input" onkeyup="filterList()" placeholder="Search title, student..." class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50">
+        </div>
+        <button onclick="fetchData()" class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-sm font-medium transition-colors flex items-center space-x-2" title="Refresh">
+          <i class="fa-solid fa-arrows-rotate"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- SUBMISSION QUEUE LIST -->
+    <div id="contributions-container" class="space-y-4">
+      <!-- Loading State -->
+      <div class="bg-white rounded-2xl p-12 text-center border border-slate-200">
+        <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500 mb-3"></i>
+        <p class="text-slate-500 font-medium">Loading submissions from campus network...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- AUDIT & VERIFICATION MODAL -->
+  <div id="review-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+        <div>
+          <span id="modal-status-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Status</span>
+          <h2 id="modal-title" class="text-xl font-bold text-slate-900 mt-1.5">Contribution Title</h2>
+        </div>
+        <button onclick="closeModal()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-6 flex-1">
+        
+        <!-- Student & Context Info -->
+        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+          <div>
+            <span class="text-xs text-slate-500 font-semibold uppercase">Student Volunteer</span>
+            <p id="modal-student-name" class="font-bold text-slate-900 mt-0.5">Maya Singh</p>
+            <p id="modal-student-id" class="text-xs text-slate-500 font-mono">std_1001</p>
+          </div>
+          <div>
+            <span class="text-xs text-slate-500 font-semibold uppercase">Location & GPS</span>
+            <p id="modal-location" class="font-bold text-slate-900 mt-0.5">Library Ground</p>
+            <p id="modal-coords" class="text-xs text-slate-500 font-mono">28.6139° N, 77.2090° E</p>
+          </div>
+          <div>
+            <span class="text-xs text-slate-500 font-semibold uppercase">Submission Date</span>
+            <p id="modal-date" class="font-bold text-slate-900 mt-0.5">20 Sep 2026</p>
+            <p class="text-xs text-emerald-600 font-semibold">ISO Timestamp Verified</p>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Student Narrative</h4>
+          <p id="modal-description" class="text-sm text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-200 leading-relaxed"></p>
+        </div>
+
+        <!-- Photo Proof Evidence -->
+        <div>
+          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Submitted Photo Evidence</h4>
+          <div id="modal-photos" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <!-- Photos dynamically injected -->
+          </div>
+        </div>
+
+        <!-- Evidence Cryptographic Integrity Audit -->
+        <div class="bg-blue-50/60 rounded-2xl p-4 border border-blue-200/80 text-xs">
+          <div class="flex items-center space-x-2 text-blue-700 font-bold mb-2">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Cryptographic Integrity & S3 Storage Proof</span>
+          </div>
+          <div class="space-y-1 font-mono text-slate-700">
+            <p><span class="font-semibold text-slate-500">S3 Key:</span> <span id="modal-s3-key">evidence/org_main_campus/...</span></p>
+            <p><span class="font-semibold text-slate-500">SHA-256 Hash:</span> <span id="modal-hash" class="text-blue-600">e3b0c44298fc1c149afbf4c8996fb...</span></p>
+            <p class="text-emerald-600 font-sans font-medium text-[11px] pt-1"><i class="fa-solid fa-check"></i> Checksum matches raw photo bytes. No file alteration detected.</p>
+          </div>
+        </div>
+
+        <!-- Impact Metrics Verification Steppers -->
+        <div class="border border-slate-200 rounded-2xl p-5">
+          <h4 class="text-sm font-bold text-slate-900 mb-1 flex items-center space-x-2">
+            <i class="fa-solid fa-sliders text-emerald-600"></i>
+            <span>Verify & Adjust Quantitative Impact Metrics</span>
+          </h4>
+          <p class="text-xs text-slate-500 mb-4">You can adjust metrics based on photo evidence prior to approving.</p>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-600 mb-1">🌳 Trees Planted</label>
+              <input type="number" id="metric-trees" min="0" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800">
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-600 mb-1">♻️ Waste Recycled (kg)</label>
+              <input type="number" id="metric-waste" min="0" step="0.5" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800">
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-600 mb-1">⚡ Energy Saved (kWh)</label>
+              <input type="number" id="metric-energy" min="0" step="0.5" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800">
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-600 mb-1">💧 Water Saved (L)</label>
+              <input type="number" id="metric-water" min="0" step="1" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800">
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-600 mb-1">⏱️ Volunteer Hours</label>
+              <input type="number" id="metric-hours" min="0" step="0.5" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800">
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-slate-600 mb-1">👥 People Reached</label>
+              <input type="number" id="metric-people" min="0" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-800">
+            </div>
+          </div>
+        </div>
+
+        <!-- Coordinator Feedback Notes Composer -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            Coordinator Feedback Note to Student
+          </label>
+          <textarea id="modal-feedback-input" rows="3" placeholder="Provide feedback, commendation, or specific revision requests for the student..." class="w-full p-3 rounded-2xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer & Action Buttons -->
+      <div class="p-6 border-t border-slate-100 bg-slate-50 rounded-b-3xl flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+          <button onclick="submitDecision('REJECTED')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-sm transition-colors flex items-center justify-center space-x-1.5">
+            <i class="fa-solid fa-xmark"></i>
+            <span>Reject</span>
+          </button>
+          <button onclick="submitDecision('CHANGES_REQUESTED')" class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-sm transition-colors flex items-center justify-center space-x-1.5">
+            <i class="fa-solid fa-arrow-rotate-left"></i>
+            <span>Request Changes</span>
+          </button>
+        </div>
+        
+        <button onclick="submitDecision('VERIFIED')" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-200 transition-all flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-certificate"></i>
+          <span>Approve & Certify Impact</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl z-50 transform transition-all duration-300 translate-y-20 opacity-0 flex items-center space-x-3 text-sm font-medium">
+    <i id="toast-icon" class="fa-solid fa-check text-emerald-400"></i>
+    <span id="toast-message">Action successful</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
