@@ -6,3 +6,18 @@ DerivedData/
 xcuserdata/
 *.xcscmblueprint
 *.xccheckout
+
+# Node & Coordinator Portal
+node_modules/
+coordinator-portal/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# AWS SAM Build Artifacts
+.aws-sam/
+aws/.aws-sam/
+
+# OS & Logs
+*.log
+.Trashes
