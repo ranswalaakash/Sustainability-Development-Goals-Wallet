@@ -102,7 +102,7 @@ struct ActivityDetailView: View {
                             ProgressView()
                                 .tint(.white)
                         } else {
-                            Image(systemName: "paperplane.fill")
+                            Image(systemName: contribution.status == .approved ? "checkmark.seal.fill" : "paperplane.fill")
                             Text(actionButtonTitle)
                                 .fontWeight(.bold)
                         }
@@ -114,7 +114,7 @@ struct ActivityDetailView: View {
                     .clipShape(Capsule())
                     .shadow(color: actionButtonColor.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
-                .disabled(isSharing)
+                .disabled(isSharing || contribution.status == .approved)
                 
                 Divider()
                     .padding(.vertical, 4)

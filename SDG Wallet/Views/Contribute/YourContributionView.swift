@@ -49,6 +49,11 @@ struct YourContributionView: View {
         .refreshable {
             await refreshStatuses()
         }
+        .onAppear {
+            Task {
+                await refreshStatuses()
+            }
+        }
         .background(Color(uiColor: .systemGroupedBackground))
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
