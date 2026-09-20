@@ -439,37 +439,45 @@ struct AddEntryView: View {
                 selectedSDGIds.insert(sdg.number)
             }
         } label: {
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
                 ZStack(alignment: .topTrailing) {
-                    Image(sdg.imageName)
+                    Image("SDG_\(sdg.number)")
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                         .frame(maxWidth: .infinity)
-                        .frame(height: 110)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.title3)
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.blue)
                             .background(Circle().fill(Color.white).padding(2))
-                            .padding(8)
+                            .padding(6)
+                    } else {
+                        Image(systemName: "circle")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color.gray.opacity(0.35))
+                            .background(Circle().fill(Color.white.opacity(0.85)).padding(2))
+                            .padding(6)
                     }
                 }
                 
                 Text(sdg.title)
                     .font(.caption.weight(.semibold))
                     .foregroundColor(.primary)
-                    .lineLimit(1)
+                    .lineLimit(2)
                     .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 32)
             }
-            .padding(10)
-            .background(Color(uiColor: .secondarySystemBackground))
-            .cornerRadius(16)
+            .padding(12)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
             )
+            .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
         }
         .buttonStyle(.plain)
     }
@@ -486,34 +494,43 @@ struct AddEntryView: View {
         } label: {
             VStack(spacing: 8) {
                 ZStack(alignment: .topTrailing) {
-                    Image(sdg.imageName)
+                    Image("SDG_\(sdg.number)")
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                         .frame(maxWidth: .infinity)
-                        .frame(height: 100)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.title3)
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.blue)
                             .background(Circle().fill(Color.white).padding(2))
-                            .padding(8)
+                            .padding(6)
+                    } else {
+                        Image(systemName: "circle")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color.gray.opacity(0.35))
+                            .background(Circle().fill(Color.white.opacity(0.85)).padding(2))
+                            .padding(6)
                     }
                 }
                 
                 Text(sdg.title)
                     .font(.caption.weight(.semibold))
                     .foregroundColor(.primary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 32)
             }
-            .padding(10)
-            .background(Color(uiColor: .secondarySystemBackground))
-            .cornerRadius(16)
+            .padding(12)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
             )
+            .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
         }
         .buttonStyle(.plain)
     }
