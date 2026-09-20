@@ -1,0 +1,218 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SDG Wallet - Production Serverless Backend (API Gateway, Lambda, S3, DynamoDB)
+  Provides tamper-evident integrity verification and human coordinator audit trails.
+
+Globals:
+  Function:
+    Timeout: 15
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Environment:
+      Variables:
+        DYNAMODB_TABLE: !Ref SDGContributionsTable
+        S3_BUCKET: !Ref SDGEvidenceBucket
+        CORS_ALLOW_ORIGIN: '*'
+
+Resources:
+  # =========================================================================
+  # 1. DynamoDB Table for Immutable Audited Contributions & Impact Records
+  # =========================================================================
+  SDGContributionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: SDGContributions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: studentId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: StudentIndex
+          KeySchema:
+            - AttributeName: studentId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # =========================================================================
+  # 2. S3 Bucket for Tamper-Evident Photo Evidence
+  # =========================================================================
+  SDGEvidenceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sdg-wallet-evidence-${AWS::AccountId}-${AWS::Region}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, HEAD]
+            AllowedOrigins: ['*']
+            MaxAge: 3600
+
+  # =========================================================================
+  # 3. HTTP API Gateway
+  # =========================================================================
+  SDGHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - X-Requested-With
+        AllowOrigins:
+          - '*'
+
+  # =========================================================================
+  # 4. Lambda Functions
+  # =========================================================================
+  
+  # A. S3 Presigned URL Generator
+  PresignFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: presign.handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Sub 'sdg-wallet-evidence-${AWS::AccountId}-${AWS::Region}'
+      Events:
+        PresignRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /contributions/presign
+            Method: POST
+        PresignRouteApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /api/contributions/presign
+            Method: POST
+
+  # B. Contributions Ingestion & Listing
+  ContributionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: contributions.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SDGContributionsTable
+      Events:
+        GetContributions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /contributions
+            Method: GET
+        GetContributionsApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /api/contributions
+            Method: GET
+        GetSingleContribution:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /contributions/{id}
+            Method: GET
+        GetSingleContributionApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /api/contributions/{id}
+            Method: GET
+        PostContribution:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /contributions
+            Method: POST
+        PostContributionApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /api/contributions
+            Method: POST
+
+  # C. Coordinator Verification Decision Handler
+  VerifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: verify.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SDGContributionsTable
+      Events:
+        VerifyRoute:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /api/contributions/{id}/verify
+            Method: POST
+
+  # D. Verified Impact & Department Statistics Aggregator
+  ImpactFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: impact.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SDGContributionsTable
+      Events:
+        StudentImpact:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /student/impact
+            Method: GET
+        StudentImpactApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /api/student/impact
+            Method: GET
+        DepartmentStats:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SDGHttpApi
+            Path: /api/stats
+            Method: GET
+
+Outputs:
+  HttpApiUrl:
+    Description: 'Base URL for API Gateway (Configure in iOS App APIService & Coordinator Portal)'
+    Value: !Sub 'https://${SDGHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+  S3EvidenceBucketName:
+    Description: 'S3 Bucket Name for Tamper-Evident Photo Proof'
+    Value: !Ref SDGEvidenceBucket
+  DynamoDBTableName:
+    Description: 'DynamoDB Table Name'
+    Value: !Ref SDGContributionsTable
