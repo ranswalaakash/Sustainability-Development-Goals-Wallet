@@ -12,165 +12,150 @@ struct ActivityDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Bindable var contribution: Contribution
     @Environment(\.dismiss) private var dismiss
-    @State private var showDeleteConfirmation = false
-    @State private var showResubmitSheet = false
     
+    @State private var showDeleteConfirmation = false
+    @State private var isSharing = false
+    @State private var showShareSuccessAlert = false
+    @State private var showResubmitSheet = false
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 18) {
                 
-                // MARK: - 1. Verification Status Banner
-                statusBanner
+                // MARK: - 1. Title Header
+                Text(contribution.title.isEmpty ? "Untitled Action" : contribution.title)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.primary)
+                    .padding(.top, 4)
                 
-                // MARK: - 2. Verification Timeline Component
-                verificationTimelineCard
+                // MARK: - 2. Main Photo Evidence
+                if let imagesData = contribution.imagesData, let firstData = imagesData.first, let uiImg = UIImage(data: firstData) {
+                    Image(uiImage: uiImg)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 240)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 4)
+                }
                 
-                // MARK: - 3. Activity Overview
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(contribution.title)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    HStack(spacing: 8) {
-                        Image(systemName: "calendar")
-                            .font(.caption)
-                        Text(contribution.date.formatted(date: .long, time: .shortened))
-                            .font(.caption)
-                        
-                        if let loc = contribution.location, !loc.isEmpty {
-                            Text("•")
-                            Image(systemName: "mappin.and.ellipse")
-                                .font(.caption)
-                            Text(loc)
-                                .font(.caption)
-                                .lineLimit(1)
-                        }
-                    }
-                    .foregroundStyle(.secondary)
-                    
+                // MARK: - 3. Narrative Description
+                if !contribution.activityDescription.isEmpty {
                     Text(contribution.activityDescription)
                         .font(.body)
-                        .foregroundStyle(.primary)
-                        .padding(.top, 4)
+                        .foregroundColor(.primary)
+                        .padding(.top, 2)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(uiColor: .secondarySystemGroupedBackground))
-                .cornerRadius(16)
                 
-                // MARK: - Photo Evidence
-                if let imagesData = contribution.imagesData, !imagesData.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Photo Evidence 📷")
-                            .font(.headline)
-                        
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                ForEach(0..<imagesData.count, id: \.self) { idx in
-                                    if let uiImg = UIImage(data: imagesData[idx]) {
-                                        Image(uiImage: uiImg)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 140, height: 140)
-                                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    }
-                                }
-                            }
-                        }
+                // MARK: - 4. Portal Status Row
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(statusColor.opacity(0.12))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: statusIconName)
+                            .font(.title3)
+                            .foregroundColor(statusColor)
                     }
-                    .padding(16)
-                    .background(Color(uiColor: .secondarySystemGroupedBackground))
-                    .cornerRadius(16)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("PORTAL STATUS")
+                            .font(.caption2.weight(.bold))
+                            .tracking(1.0)
+                            .foregroundStyle(.secondary)
+                        
+                        Text(statusTitle)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.primary)
+                    }
+                    
+                    Spacer()
                 }
+                .padding(.vertical, 6)
                 
-                // MARK: - Evidence Integrity (SHA-256 Checksum)
-                evidenceIntegrityCard
-                
-                // MARK: - 4. AI-Assisted Analysis & Extractions Card
-                aiExtractionSection
-                
-                // MARK: - 5. Coordinator Notes (if verified/reviewed)
+                // Coordinator Feedback Note (if present)
                 if let notes = contribution.reviewerNotes, !notes.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Image(systemName: contribution.status == .approved ? "person.badge.shield.checkmark.fill" : "exclamationmark.triangle.fill")
-                                .foregroundColor(contribution.status == .approved ? .green : (contribution.status == .changesRequested ? .orange : .red))
-                            Text(contribution.status == .approved ? "Coordinator Verification Note" : (contribution.status == .changesRequested ? "Coordinator Requested Changes" : "Rejection Reason"))
-                                .font(.headline)
+                                .foregroundColor(statusColor)
+                            Text(contribution.status == .approved ? "Coordinator Verification Note" : "Coordinator Feedback")
+                                .font(.caption.weight(.bold))
+                                .foregroundColor(statusColor)
                         }
-                        
                         Text(notes)
                             .font(.subheadline)
                             .foregroundStyle(.primary)
-                            .padding(.vertical, 2)
-                        
-                        if let reviewer = contribution.verifiedBy {
-                            Text("Reviewed by: \(reviewer)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
                     }
-                    .padding(16)
+                    .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(contribution.status.color.opacity(0.12))
-                    .cornerRadius(16)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(contribution.status.color.opacity(0.3), lineWidth: 1)
-                    )
+                    .background(statusColor.opacity(0.08))
+                    .cornerRadius(14)
                 }
                 
-                // MARK: - Resubmit Button (When Changes are Requested)
-                if contribution.status == .changesRequested {
-                    Button {
-                        showResubmitSheet = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                            Text("Edit & Resubmit to Coordinator")
+                // MARK: - 5. Action Button (Share to Department Portal)
+                Button {
+                    shareToPortal()
+                } label: {
+                    HStack(spacing: 8) {
+                        if isSharing {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Image(systemName: "paperplane.fill")
+                            Text(actionButtonTitle)
                                 .fontWeight(.bold)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color.orange)
-                        .foregroundColor(.white)
-                        .cornerRadius(14)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(actionButtonColor)
+                    .foregroundColor(.white)
+                    .clipShape(Capsule())
+                    .shadow(color: actionButtonColor.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                .disabled(isSharing)
+                
+                Divider()
+                    .padding(.vertical, 4)
+                
+                // MARK: - 6. SDG Covered Section
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("SDG Covered")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    
+                    if contribution.sdgNumbers.isEmpty {
+                        Text("No specific SDGs linked.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        HStack(spacing: 12) {
+                            ForEach(contribution.sdgNumbers, id: \.self) { num in
+                                Image("SDG_\(num)")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 86, height: 86)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
+                            }
+                        }
                     }
                 }
-                
-                // MARK: - Delete Contribution Button
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 40)
+        }
+        .background(Color(uiColor: .systemBackground))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button(role: .destructive) {
                     showDeleteConfirmation = true
                 } label: {
-                    HStack {
-                        Image(systemName: "trash")
-                        Text("Delete Contribution")
-                    }
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.red.opacity(0.1))
-                    .foregroundColor(.red)
-                    .cornerRadius(14)
-                }
-                .padding(.top, 4)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-        }
-        .sheet(isPresented: $showResubmitSheet) {
-            ResubmitContributionSheet(contribution: contribution)
-        }
-        .refreshable {
-            if let result = try? await APIService.shared.fetchContributionStatus(id: contribution.id) {
-                await MainActor.run {
-                    contribution.status = result.status
-                    if let note = result.note {
-                        contribution.reviewerNotes = note
-                    }
-                    if let reviewer = result.reviewer {
-                        contribution.verifiedBy = reviewer
-                    }
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
                 }
             }
         }
@@ -187,325 +172,119 @@ struct ActivityDetailView: View {
         } message: {
             Text("Are you sure you want to permanently delete this contribution?")
         }
-        .background(Color(uiColor: .systemGroupedBackground))
-        .navigationTitle("Contribution Detail")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(role: .destructive) {
-                    showDeleteConfirmation = true
-                } label: {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                }
+        .alert("Shared to Portal", isPresented: $showShareSuccessAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Your contribution has been shared to the Campus Coordinator Portal for verification.")
+        }
+        .sheet(isPresented: $showResubmitSheet) {
+            ResubmitContributionSheet(contribution: contribution)
+        }
+        .refreshable {
+            await syncStatus()
+        }
+        .onAppear {
+            Task {
+                await syncStatus()
             }
         }
     }
     
-    // MARK: - Status Banner
-    private var statusBanner: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(contribution.status.color.opacity(0.2))
-                    .frame(width: 44, height: 44)
-                Image(systemName: contribution.status.iconName)
-                    .font(.title3)
-                    .foregroundColor(contribution.status.color)
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(contribution.status.title)
-                    .font(.headline)
-                    .foregroundColor(contribution.status.color)
-                
-                if contribution.status == .pending {
-                    Text("Submitted to Campus Sustainability Coordinator")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if contribution.status == .approved {
-                    Text("Impact verified • Added to official 5 Pillars score")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if contribution.status == .changesRequested {
-                    Text("Coordinator requested revision. Please review feedback note.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Submission rejected by Coordinator.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
-        }
-        .padding(14)
-        .background(contribution.status.color.opacity(0.12))
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(contribution.status.color.opacity(0.3), lineWidth: 1)
-        )
-    }
-    
-    // MARK: - Verification Timeline Card
-    private var verificationTimelineCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Verification Timeline")
-                .font(.caption.weight(.bold))
-                .textCase(.uppercase)
-                .foregroundStyle(.secondary)
-            
-            HStack(alignment: .top, spacing: 0) {
-                TimelineStepView(
-                    stepNumber: 1,
-                    title: "Submitted",
-                    subtitle: contribution.date.formatted(date: .abbreviated, time: .shortened),
-                    isCompleted: true,
-                    isCurrent: false,
-                    isLast: false
-                )
-                
-                TimelineStepView(
-                    stepNumber: 2,
-                    title: "Evidence",
-                    subtitle: "SHA-256 S3",
-                    isCompleted: true,
-                    isCurrent: false,
-                    isLast: false
-                )
-                
-                TimelineStepView(
-                    stepNumber: 3,
-                    title: "AI Analyzed",
-                    subtitle: "\(contribution.sdgNumbers.count) SDGs",
-                    isCompleted: true,
-                    isCurrent: false,
-                    isLast: false
-                )
-                
-                TimelineStepView(
-                    stepNumber: 4,
-                    title: "Coordinator",
-                    subtitle: contribution.status == .pending ? "Awaiting" : "Reviewed",
-                    isCompleted: contribution.status != .pending,
-                    isCurrent: contribution.status == .pending,
-                    isLast: false
-                )
-                
-                TimelineStepView(
-                    stepNumber: 5,
-                    title: contribution.status == .approved ? "Verified" : (contribution.status == .changesRequested ? "Changes" : (contribution.status == .rejected ? "Rejected" : "Impact")),
-                    subtitle: contribution.status == .approved ? "Official" : "Final",
-                    isCompleted: contribution.status == .approved,
-                    isCurrent: contribution.status == .approved,
-                    isLast: true
-                )
-            }
-        }
-        .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .cornerRadius(16)
-    }
-    
-    // MARK: - Evidence Integrity Card
-    private var evidenceIntegrityCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "lock.shield.fill")
-                    .foregroundColor(.blue)
-                Text("Evidence Integrity (S3 Metadata)")
-                    .font(.caption.weight(.bold))
-                    .foregroundColor(.blue)
-                Spacer()
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("S3 Object Key:")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
-                Text(contribution.primaryS3Key ?? "Local Only (Pending Sync)")
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                
-                Text("SHA-256 Checksum:")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
-                Text(contribution.fileHashSha256 ?? "None (No photo attached)")
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundColor(contribution.fileHashSha256 != nil ? .blue : .secondary)
-                    .lineLimit(1)
-            }
-            .padding(10)
-            .background(Color.blue.opacity(0.06))
-            .cornerRadius(10)
-            
-            Text("Verifies the submitted evidence file has not been altered after recording.")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .cornerRadius(16)
-    }
-    
-    // MARK: - AI Extractions Section
-    private var aiExtractionSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Image(systemName: "sparkles")
-                    .foregroundColor(.purple)
-                Text("AI-Assisted Analysis — Human Verification Required")
-                    .font(.caption.weight(.bold))
-                    .foregroundColor(.purple)
-                Spacer()
-            }
-            
-            Text("AI can suggest. Humans verify. Only verified contributions count toward official impact.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            
-            Divider()
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Suggested SDGs:")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                
-                ForEach(contribution.sdgNumbers, id: \.self) { num in
-                    let sdgObj = sdgs.first(where: { $0.number == num })
-                    HStack(spacing: 10) {
-                        Image("SDG_\(num)")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 32, height: 32)
-                            .cornerRadius(6)
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("SDG \(num): \(sdgObj?.title ?? "")")
-                                .font(.subheadline.weight(.semibold))
-                            Text(sdgObj?.tagline ?? "")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(hex: sdgObj?.colorHex ?? "#3F7E44").opacity(0.12))
-                    .cornerRadius(10)
-                }
-            }
-            
-            if contribution.hasExtractedMetrics {
-                Divider()
-                Text("Extracted Impact Metrics:")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    if contribution.treesPlanted > 0 {
-                        metricRow(icon: "leaf.fill", label: "Trees Planted", value: "\(contribution.treesPlanted) trees", color: .green)
-                    }
-                    if contribution.wasteRecycledKg > 0 {
-                        metricRow(icon: "arrow.3.circlepath", label: "Waste Recycled", value: "\(Int(contribution.wasteRecycledKg)) kg", color: .blue)
-                    }
-                    if contribution.energySavedKWh > 0 {
-                        metricRow(icon: "bolt.fill", label: "Energy Saved", value: "\(Int(contribution.energySavedKWh)) kWh", color: .orange)
-                    }
-                    if contribution.waterSavedLiters > 0 {
-                        metricRow(icon: "drop.fill", label: "Water Saved", value: "\(Int(contribution.waterSavedLiters)) L", color: .teal)
-                    }
-                    if contribution.peopleReached > 0 {
-                        metricRow(icon: "person.2.fill", label: "People Reached", value: "\(contribution.peopleReached) people", color: .indigo)
-                    }
-                    if contribution.volunteerHours > 0 {
-                        metricRow(icon: "clock.fill", label: "Volunteer Hours", value: "\(Int(contribution.volunteerHours)) hrs", color: .purple)
-                    }
-                }
-            }
-        }
-        .padding(16)
-        .background(Color.purple.opacity(0.06))
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.purple.opacity(0.2), lineWidth: 1)
-        )
-    }
-    
-    private func metricRow(icon: String, label: String, value: String, color: Color) -> some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(color)
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .font(.subheadline.weight(.bold))
-                .foregroundColor(color)
+    // MARK: - Status Properties
+    private var statusTitle: String {
+        switch contribution.status {
+        case .pending:
+            return "Saved on this device"
+        case .approved:
+            return "Verified by Coordinator"
+        case .changesRequested:
+            return "Changes requested by Coordinator"
+        case .rejected:
+            return "Rejected by Coordinator"
         }
     }
-}
-
-// MARK: - Timeline Step Component
-struct TimelineStepView: View {
-    let stepNumber: Int
-    let title: String
-    let subtitle: String
-    let isCompleted: Bool
-    let isCurrent: Bool
-    let isLast: Bool
     
-    var body: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 0) {
-                if stepNumber > 1 {
-                    Rectangle()
-                        .fill(isCompleted || isCurrent ? Color.green : Color.secondary.opacity(0.2))
-                        .frame(height: 2)
-                }
-                
-                ZStack {
-                    Circle()
-                        .fill(isCompleted ? Color.green : (isCurrent ? Color.orange : Color.secondary.opacity(0.2)))
-                        .frame(width: 24, height: 24)
-                    
-                    if isCompleted {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.white)
-                    } else {
-                        Text("\(stepNumber)")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(isCurrent ? .white : .secondary)
-                    }
-                }
-                
-                if !isLast {
-                    Rectangle()
-                        .fill(isCompleted ? Color.green : Color.secondary.opacity(0.2))
-                        .frame(height: 2)
-                }
-            }
-            
-            VStack(spacing: 2) {
-                Text(title)
-                    .font(.system(size: 10, weight: isCurrent || isCompleted ? .bold : .medium))
-                    .foregroundColor(isCompleted ? .green : (isCurrent ? .orange : .secondary))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(1)
-                
-                Text(subtitle)
-                    .font(.system(size: 8))
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
+    private var statusIconName: String {
+        switch contribution.status {
+        case .pending:
+            return "checkmark.seal"
+        case .approved:
+            return "checkmark.seal.fill"
+        case .changesRequested:
+            return "exclamationmark.triangle.fill"
+        case .rejected:
+            return "xmark.octagon.fill"
+        }
+    }
+    
+    private var statusColor: Color {
+        switch contribution.status {
+        case .pending:
+            return .secondary
+        case .approved:
+            return .green
+        case .changesRequested:
+            return .orange
+        case .rejected:
+            return .red
+        }
+    }
+    
+    private var actionButtonTitle: String {
+        switch contribution.status {
+        case .pending:
+            return "Share to Department Portal"
+        case .approved:
+            return "Verified on Portal"
+        case .changesRequested:
+            return "Edit & Resubmit to Portal"
+        case .rejected:
+            return "Resubmit to Portal"
+        }
+    }
+    
+    private var actionButtonColor: Color {
+        switch contribution.status {
+        case .pending:
+            return Color.green
+        case .approved:
+            return Color.green
+        case .changesRequested:
+            return Color.orange
+        case .rejected:
+            return Color.red
+        }
+    }
+    
+    // MARK: - Actions
+    private func shareToPortal() {
+        if contribution.status == .changesRequested {
+            showResubmitSheet = true
+            return
+        }
+        
+        isSharing = true
+        Task {
+            _ = try? await APIService.shared.submitContribution(contribution)
+            await MainActor.run {
+                isSharing = false
+                showShareSuccessAlert = true
             }
         }
-        .frame(maxWidth: .infinity)
+    }
+    
+    private func syncStatus() async {
+        if let result = try? await APIService.shared.fetchContributionStatus(id: contribution.id) {
+            await MainActor.run {
+                contribution.status = result.status
+                if let note = result.note {
+                    contribution.reviewerNotes = note
+                }
+                if let reviewer = result.reviewer {
+                    contribution.verifiedBy = reviewer
+                }
+            }
+        }
     }
 }
 
@@ -516,7 +295,6 @@ struct ResubmitContributionSheet: View {
     
     @State private var updatedTitle: String = ""
     @State private var updatedDescription: String = ""
-    @State private var studentReplyNote: String = ""
     @State private var isSubmitting: Bool = false
     
     var body: some View {
@@ -524,7 +302,6 @@ struct ResubmitContributionSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     
-                    // Coordinator Feedback Notice
                     if let note = contribution.reviewerNotes {
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
@@ -556,22 +333,11 @@ struct ResubmitContributionSheet: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Updated Description / Additional Context")
+                        Text("Updated Description")
                             .font(.caption.weight(.bold))
                             .foregroundStyle(.secondary)
-                        TextField("Provide more clarity, updated figures or details...", text: $updatedDescription, axis: .vertical)
+                        TextField("Provide updated details...", text: $updatedDescription, axis: .vertical)
                             .lineLimit(4...8)
-                            .textFieldStyle(.plain)
-                            .padding(12)
-                            .background(Color(uiColor: .secondarySystemGroupedBackground))
-                            .cornerRadius(10)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Response Note to Coordinator (Optional)")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.secondary)
-                        TextField("e.g. Updated photos and clarified volunteer hours as requested.", text: $studentReplyNote)
                             .textFieldStyle(.plain)
                             .padding(12)
                             .background(Color(uiColor: .secondarySystemGroupedBackground))
@@ -585,16 +351,16 @@ struct ResubmitContributionSheet: View {
                             if isSubmitting {
                                 ProgressView().tint(.white)
                             } else {
-                                Image(systemName: "arrow.up.circle.fill")
-                                Text("Resubmit for Verification")
+                                Image(systemName: "paperplane.fill")
+                                Text("Resubmit to Department Portal")
                                     .fontWeight(.bold)
                             }
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(updatedTitle.isEmpty ? Color.gray : Color.green)
+                        .background(Color.green)
                         .foregroundColor(.white)
-                        .cornerRadius(14)
+                        .clipShape(Capsule())
                     }
                     .disabled(updatedTitle.isEmpty || isSubmitting)
                     .padding(.top, 10)
@@ -602,7 +368,7 @@ struct ResubmitContributionSheet: View {
                 .padding(16)
             }
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Resubmit Entry")
+            .navigationTitle("Update Entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
